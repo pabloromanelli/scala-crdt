@@ -74,7 +74,8 @@ trait CommonGenerators extends PropertyChecks {
       chars <- Gen.listOfN(set.size, valuesGen)
     } yield set.zip(chars)
       .groupBy(_._2)
-      .mapValues(_.map(_._1).toSet)
+      .mapValues(_.map(_._1).to(Set))
+      .to(Map)
 
   val kernelGen: Gen[Kernel[Int, Char]] = for {
     context <- contextGen

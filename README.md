@@ -1,6 +1,7 @@
 # Scala CRDTs
 
 ### Features
+- Immutable
 - Property tested
 - Uses Dotted Version Vector Sets to ease causal CRDTs development
 - Delta Replication Enabled
