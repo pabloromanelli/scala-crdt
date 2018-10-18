@@ -7,8 +7,6 @@ import scala.language.higherKinds
 trait KernelLike[ID, V, C <: ContextLike[ID, C], K <: KernelLike[ID, V, C, K]] {
   self: K =>
 
-  type MUTATION = (DeltaKernel[ID, V], K)
-
   def dottedVals: HashMap[V, Set[Dot[ID]]]
 
   def context: C
@@ -58,7 +56,7 @@ trait KernelLike[ID, V, C <: ContextLike[ID, C], K <: KernelLike[ID, V, C, K]] {
     mapBuilder.result
   }
 
-  private def dots(value: V) =
+  protected def dots(value: V): Set[(ID, Long)] =
     dottedVals.getOrElse(value, Set.empty)
 
   def add(dot: Dot[ID], value: V): K =
@@ -66,29 +64,9 @@ trait KernelLike[ID, V, C <: ContextLike[ID, C], K <: KernelLike[ID, V, C, K]] {
       context.insertDot(dot, compact = true))
 
   /**
-    * Removed the value and the dots associated with it keeping the causal context intact.
-    * If the value is not present, does nothing.
-    * The context keeps the causal past.
-    * The removed dots are added to the delta.
-    */
-  def remove(value: V, delta: DeltaKernel[ID, V]): MUTATION = {
-    (delta.copy(context = delta.context.insertDot(dots(value), compact = true)),
-      copy(dottedVals = dottedVals - value))
-  }
-
-  /**
-    * Removes all the values keeping the causal context intact.
-    * The removed dots are added to the delta.
-    */
-  def clear(delta: DeltaKernel[ID, V]): MUTATION =
-    (delta.copy(context = delta.context.insertDot(dottedVals.values.flatten, compact = true)),
-      copy(HashMap.empty, context))
-
-  /**
     * Is true if there are no current values (on creation, after clear or after merge of deletions).
     */
-  def isEmpty: Boolean =
-    dottedVals.isEmpty
+  def isEmpty: Boolean = dottedVals.isEmpty
 
   def values: Set[V] = dottedVals.keySet
 
@@ -105,19 +83,49 @@ case class DeltaKernel[ID, V](dottedVals: HashMap[V, Set[Dot[ID]]] = HashMap[V, 
 }
 
 case class Kernel[ID, V](dottedVals: HashMap[V, Set[Dot[ID]]] = HashMap[V, Set[Dot[ID]]](),
-                         context: Context[ID])
+                         context: Context[ID],
+                         delta: DeltaKernel[ID, V] = DeltaKernel())
   extends KernelLike[ID, V, Context[ID], Kernel[ID, V]] {
+
+  override def add(dot: (ID, Long), value: V): Kernel[ID, V] = {
+
+  }
 
   /**
     * Adds the value using the current context for the node.
     */
-  def add(value: V, delta: DeltaKernel[ID, V]): MUTATION = {
+  def add(value: V): Kernel[ID, V] = {
     val dot = context.nextDot
-    (delta.add(dot, value), add(dot, value))
+    delta.add(dot, value)
+    add(dot, value)
   }
+
+  /**
+    * Removed the value and the dots associated with it keeping the causal context intact.
+    * If the value is not present, does nothing.
+    * The context keeps the causal past.
+    * The removed dots are added to the delta.
+    */
+  def remove(value: V): Kernel[ID, V] =
+    Kernel(
+      dottedVals - value,
+      context,
+      delta.copy(context = delta.context.insertDot(dots(value), compact = true))
+    )
+
+  /**
+    * Removes all the values keeping the causal context intact.
+    * The removed dots are added to the delta.
+    */
+  def clear(delta: DeltaKernel[ID, V]): Kernel[ID, V] =
+    Kernel(
+      HashMap.empty,
+      context,
+      delta.copy(context = delta.context.insertDot(dottedVals.values.flatten, compact = true))
+    )
 
   override def copy(dottedVals: HashMap[V, Set[(ID, Long)]],
                     context: Context[ID]): Kernel[ID, V] =
-    Kernel(dottedVals, context)
+    Kernel(dottedVals, context, delta)
 
 }

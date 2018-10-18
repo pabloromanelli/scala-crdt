@@ -1,5 +1,7 @@
 # Scala CRDTs
 
+(work in progress)
+
 ### Features
 - Immutable
 - Property tested
@@ -7,7 +9,7 @@
 - Delta Replication Enabled
 - Configurable serialization / Multi-lang interoperability
 - Configurable persistent backend
-- Extensible: Create your own type of CRDT
+- Extensible (create your own types of CRDTs)
 
 ## Causality Tracking
 
@@ -70,6 +72,8 @@ this Kernel
 - (?) Dotted Version Vectors: Logical Clocks for Optimistic Replication
 - (?) (improved dvvs? / related to storage) https://hal.inria.fr/hal-01775033/document
 - *** https://queue.acm.org/detail.cfm?id=2917756
+
+CRDTs and the Quest for Distributed Consistency: https://www.youtube.com/watch?v=B5NULPSiOGw
 
 Composition of State-based CRDTs
 http://haslab.uminho.pt/cbm/files/crdtcompositionreport.pdf
